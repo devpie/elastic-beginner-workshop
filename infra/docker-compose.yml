@@ -1,0 +1,47 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2 
+    ports: 
+      - 9200:9200
+    container_name: elasticsearch
+    environment: 
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - docker-elk
+  cerebro:
+    image: yannart/cerebro
+    ports:
+      - 9000:9000
+    networks:
+      - docker-elk
+    depends_on:
+      - elasticsearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.2
+    container_name: kibana
+    ports: 
+      - 5601:5601
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+    networks:
+      - docker-elk
+    depends_on:
+      - elasticsearch
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.4.2
+    volumes:
+      - ./pipelineConfigs:/usr/share/logstash/pipeline/:ro
+      - ./logstashInput:/logstashInput
+    ports:
+      - 5000:5000
+      - 9600:9600
+    networks:
+      - docker-elk
+    depends_on:
+      - elasticsearch 
+networks:
+  docker-elk:
+    driver: bridge
+# You need to increase max_map_count on your Docker host:
+# $ sysctl -w vm.max_map_count=262144
